@@ -1,0 +1,59 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score
+
+# Step 1: Load dataset
+file_path = r"C:\Users\anany\Downloads\archive\Mall_Customers.csv"
+df = pd.read_csv(file_path)
+
+# Step 2: Clean and encode
+df_clean = df.drop("CustomerID", axis=1)
+df_clean['Gender'] = df_clean['Gender'].map({'Male': 0, 'Female': 1})
+
+# Step 3: Standardize features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df_clean)
+
+# Step 4: Elbow Method
+inertia = []
+K = range(1, 11)
+for k in K:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(X_scaled)
+    inertia.append(kmeans.inertia_)
+
+plt.figure(figsize=(6, 4))
+plt.plot(K, inertia, 'bo-')
+plt.xlabel("Number of Clusters (K)")
+plt.ylabel("Inertia")
+plt.title("Elbow Method for Optimal K")
+plt.grid(True)
+plt.show()
+
+# Step 5: KMeans clustering with optimal K (e.g., 5)
+optimal_k = 5
+kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+labels = kmeans.fit_predict(X_scaled)
+df_clean['Cluster'] = labels
+
+# Step 6: PCA for 2D visualization
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=labels, palette='Set1', s=100)
+plt.title("Mall Customer Clusters (PCA View)")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.legend(title='Cluster')
+plt.grid(True)
+plt.show()
+
+# Step 7: Evaluate clustering
+sil_score = silhouette_score(X_scaled, labels)
+print(f"Silhouette Score: {sil_score:.2f}")
